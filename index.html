@@ -253,7 +253,7 @@
   .hint{ font-size:12px; color:#9C9584; }
 
   .test-hint{
-    font-size:12px; color:var(--ink-soft); line-height:1.5; text-align:left;
+    font-size:12px; color:var(--ink-soft); line-height:1.5; text-align:center;
   }
   .test-hint b{ color:var(--ink); }
   .test-chips{
@@ -360,6 +360,16 @@
   }
   .btn-secondary:hover{ border-color:var(--ink); color:var(--ink); }
 
+  .btn-test{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:14px;
+    background:var(--ink); color:var(--paper); border:none;
+    padding:11px 26px; border-radius:2px; cursor:pointer; letter-spacing:0.03em;
+    align-self:flex-start;
+  }
+  .btn-test:hover{ background:var(--seal); }
+  .btn-test.active{ background:var(--seal); }
+  .btn-test.active:hover{ background:var(--seal-dark); }
+
   .options-modal{
     display:none;
     position:fixed; inset:0; z-index:100;
@@ -390,6 +400,17 @@
     display:flex; flex-direction:column; gap:28px;
   }
   .opt-section{ display:flex; flex-direction:column; gap:9px; width:100%; }
+  .font-preview{
+    display:flex; gap:12px;
+    padding:14px 16px;
+    background:var(--paper-dark);
+    border:1px solid var(--line);
+    border-radius:4px;
+  }
+  .font-preview span{
+    font-weight:600; font-size:26px; color:var(--ink); line-height:1;
+    transition:font-family .1s;
+  }
   .opt-label{
     font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
   }
@@ -397,7 +418,10 @@
     flex-shrink:0; padding:14px 20px 20px; border-top:1px solid var(--line);
     display:flex; justify-content:center;
   }
-  .options-footer-inner{ width:100%; max-width:480px; }
+  .options-footer-inner{
+    width:100%; max-width:480px; margin:0 auto;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+  }
   #optionsTestInput{ width:100%; }
   @media (max-width: 480px){
     .options-header{ padding:14px 16px; }
@@ -458,6 +482,9 @@
           <div class="chip small" data-font="gothic">clean — ゴシック</div>
           <div class="chip small" data-font="mixed">mixed</div>
         </div>
+        <div class="font-preview" id="fontPreview">
+          <span>あ</span><span>い</span><span>う</span><span>え</span><span>お</span>
+        </div>
       </div>
       <div class="opt-section slider-block">
         <div class="slider-head">
@@ -468,14 +495,16 @@
         <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
       </div>
       <div class="opt-section">
-        <button type="button" class="btn-secondary" id="testToggleBtn">TEST</button>
-        <div class="test-hint" id="testHint" style="display:none;">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in.</div>
-        <div class="test-chips" id="optTestChips" style="display:none;"></div>
+        <button type="button" class="btn-test" id="testToggleBtn">TEST</button>
       </div>
     </div>
   </div>
   <div class="options-footer" id="optionsFooter" style="display:none;">
-    <input type="text" class="options-footer-inner" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
+    <div class="options-footer-inner">
+      <div class="test-hint" id="testHint" style="display:none;">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> below — see which one locks in.</div>
+      <div class="test-chips" id="optTestChips" style="display:none;"></div>
+      <input type="text" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
+    </div>
   </div>
 </div>
 
@@ -552,12 +581,25 @@ const FONTS = {
   gothic: "'Noto Sans JP', sans-serif",
 };
 let fontMode = 'serif'; // 'serif' | 'gothic' | 'mixed'
+const fontPreview = document.getElementById('fontPreview');
+
+function updateFontPreview(key){
+  const spans = fontPreview.querySelectorAll('span');
+  spans.forEach((span, i)=>{
+    if(key === 'mixed'){
+      span.style.fontFamily = (i % 2 === 0) ? FONTS.serif : FONTS.gothic;
+    } else {
+      span.style.fontFamily = FONTS[key];
+    }
+  });
+}
 
 function setFont(key){
   fontMode = key;
   if(key !== 'mixed'){
     document.documentElement.style.setProperty('--kana-font', FONTS[key]);
   }
+  updateFontPreview(key);
   // keep every font chip on the page (header + either overlay) in sync
   document.querySelectorAll('[data-font]').forEach(chip=>{
     chip.classList.toggle('active', chip.dataset.font === key);
@@ -574,6 +616,7 @@ document.addEventListener('click', (e)=>{
   if(!chip) return;
   setFont(chip.dataset.font);
 });
+updateFontPreview(fontMode);
 
 // ---------------------------------------------------------------
 // MOBILE VIEWPORT HANDLING
@@ -875,6 +918,7 @@ let optTestActive = false;
 function enterTestMode(){
   optTestActive = true;
   testToggleBtn.textContent = 'End test';
+  testToggleBtn.classList.add('active');
   testHint.style.display = 'block';
   optTestChips.style.display = 'flex';
   optionsFooter.style.display = 'flex';
@@ -886,6 +930,7 @@ function exitTestModeUI(){
   optTestActive = false;
   clearTimeout(testPendingResolve);
   testToggleBtn.textContent = 'TEST';
+  testToggleBtn.classList.remove('active');
   testHint.style.display = 'none';
   optTestChips.style.display = 'none';
   optTestChips.innerHTML = '';
