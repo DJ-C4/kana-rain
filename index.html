@@ -214,8 +214,10 @@
   .overlay{
     position:absolute; inset:0; z-index:20;
     background:rgba(242,237,227,0.94);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     text-align:center; padding:24px; gap:14px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
   .overlay h1{
     font-family:'Noto Serif JP', serif; font-weight:900; font-size:42px; margin:0;
@@ -347,13 +349,26 @@
     .chip.small{ font-size:10px; padding:4px 9px; }
     footer{ padding:6px 14px 10px; }
     input[type=text]{ font-size:16px; padding:10px 14px; }
-    .overlay{ padding:16px; gap:10px; }
-    .overlay h1{ font-size:30px; }
-    .overlay .seal-mark{ width:60px; height:60px; font-size:24px; }
-    .overlay p{ font-size:14px; }
-    .modebar{ gap:6px; margin-bottom:6px; }
+    .overlay{ padding:16px; gap:8px; }
+    .overlay h1{ font-size:24px; }
+    .overlay .seal-mark{ width:44px; height:44px; font-size:18px; margin-bottom:0; }
+    .overlay p{ font-size:12.5px; }
+    .modebar{ gap:5px; margin-bottom:2px; }
+    .chip{ font-size:11px; padding:5px 10px; }
     .recap-item{ padding:8px 10px; min-width:46px; }
     .recap-item .rc-char{ font-size:22px; }
+    .slider-block{ gap:3px; }
+    .slider-head{ font-size:12px; }
+    .sl-help{ font-size:10.5px; line-height:1.35; }
+    .btn-outline{ padding:7px 18px; font-size:12px; }
+    .test-panel{ gap:6px; }
+    .test-hint{ font-size:10.5px; max-width:280px; }
+    .test-chips{ min-height:56px; gap:10px; }
+    .test-chip{ padding:8px 12px; }
+    .test-chip .tc-char{ font-size:24px; }
+    .test-chip .tc-romaji{ font-size:10px; }
+    .btn{ padding:10px 22px; font-size:14px; margin-top:2px; }
+    .hint{ font-size:10px; }
   }
 
   /* while the keyboard is open, give the falling field back its room —
@@ -389,7 +404,7 @@
     <div class="overlay" id="overlay">
       <div class="seal-mark">始</div>
       <h1>Kana Rain</h1>
-      <p>Kana fall from the top. Type the <b>romaji</b> — it clears the moment your spelling matches, no need to hit Enter. Pick a set to begin.</p>
+      <p>Kana fall — type the <b>romaji</b> before it hits the line. No need to hit Enter.</p>
       <div class="modebar" id="modebar">
         <div class="chip active" data-mode="hira">Hiragana</div>
         <div class="chip" data-mode="kata">Katakana</div>
