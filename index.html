@@ -379,6 +379,29 @@
   }
   body.keyboard-open header{ padding-bottom:4px; }
   .fontbar{ transition: max-height .18s ease, opacity .18s ease, padding .18s ease; max-height:60px; }
+
+  /* while actively testing with the keyboard up, clear away everything
+     except the test chips and hint — that's the only thing worth the
+     limited space left above the keyboard on a phone */
+  body.testing.keyboard-open .overlay > h1,
+  body.testing.keyboard-open .overlay > .seal-mark,
+  body.testing.keyboard-open .overlay > p,
+  body.testing.keyboard-open .overlay > .modebar,
+  body.testing.keyboard-open .overlay > .slider-block,
+  body.testing.keyboard-open .overlay > .btn-outline,
+  body.testing.keyboard-open .overlay > #startBtn,
+  body.testing.keyboard-open .overlay > #startBtn2{
+    display:none;
+  }
+  body.testing.keyboard-open .overlay{
+    justify-content:center; gap:10px; padding:14px;
+  }
+  body.testing.keyboard-open header{
+    padding:6px 14px 2px;
+  }
+  body.testing.keyboard-open .title small{
+    display:none;
+  }
 </style>
 </head>
 <body>
@@ -593,6 +616,7 @@ function currentFallDuration(){
 
 function startGame(){
   testMode = false;
+  document.body.classList.remove('testing');
   clearTimeout(testPendingResolve);
   clearTimeout(pendingResolve);
   score = 0; combo = 0; bestCombo = 0; lives = TUNE.lives;
@@ -851,6 +875,7 @@ function testAttemptMatch(guess){
 
 function startTestMode(){
   testMode = true;
+  document.body.classList.add('testing');
   const { panel } = testPanelEls();
   if(panel) panel.style.display = 'flex';
   input.disabled = false;
@@ -861,6 +886,7 @@ function startTestMode(){
 
 function exitTestMode(){
   testMode = false;
+  document.body.classList.remove('testing');
   clearTimeout(testPendingResolve);
   const { panel } = testPanelEls();
   if(panel) panel.style.display = 'none';
