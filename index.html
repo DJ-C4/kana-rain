@@ -252,11 +252,11 @@
   .hint{ font-size:12px; color:#9C9584; }
 
   .test-hint{
-    font-size:12px; color:var(--ink-soft); max-width:320px; line-height:1.5;
+    font-size:12px; color:var(--ink-soft); line-height:1.5; text-align:left;
   }
   .test-hint b{ color:var(--ink); }
   .test-chips{
-    display:flex; gap:14px; align-items:center; justify-content:center;
+    display:flex; gap:14px; align-items:center; justify-content:flex-start;
     min-height:74px;
   }
   .test-chip{
@@ -281,7 +281,7 @@
   .link-btn:hover{ color:var(--seal); }
 
   .slider-block{
-    width:100%; max-width:360px;
+    width:100%;
     display:flex; flex-direction:column; gap:6px;
   }
   .slider-head{
@@ -345,13 +345,13 @@
      anymore — settings live in their own Options screen now */
   body.keyboard-open header{ padding-bottom:4px; }
 
-  .icon-btn{
-    background:none; border:1px solid var(--line); border-radius:50%;
-    width:26px; height:26px; padding:0; margin-left:2px;
-    font-size:14px; line-height:1; color:var(--ink-soft);
-    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  .btn-secondary{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:13px;
+    background:transparent; color:var(--ink-soft); border:1px solid var(--line);
+    padding:9px 20px; border-radius:2px; cursor:pointer; letter-spacing:0.03em;
+    display:inline-flex; align-items:center; gap:6px;
   }
-  .icon-btn:hover{ border-color:var(--ink); color:var(--ink); }
+  .btn-secondary:hover{ border-color:var(--ink); color:var(--ink); }
 
   .options-modal{
     display:none;
@@ -375,19 +375,28 @@
   .options-close:hover{ color:var(--seal); }
   .options-body{
     flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
-    padding:20px; display:flex; flex-direction:column; gap:26px;
+    display:flex; flex-direction:column; align-items:center;
+    padding:32px 20px;
   }
-  .opt-section{ display:flex; flex-direction:column; gap:9px; }
+  .options-body-inner{
+    width:100%; max-width:480px;
+    display:flex; flex-direction:column; gap:28px;
+  }
+  .opt-section{ display:flex; flex-direction:column; gap:9px; width:100%; }
   .opt-label{
     font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
   }
   .options-footer{
-    flex-shrink:0; padding:12px 20px 18px; border-top:1px solid var(--line);
+    flex-shrink:0; padding:14px 20px 20px; border-top:1px solid var(--line);
+    display:flex; justify-content:center;
   }
+  .options-footer-inner{ width:100%; max-width:480px; }
+  #optionsTestInput{ width:100%; }
   @media (max-width: 480px){
     .options-header{ padding:14px 16px; }
     .options-title{ font-size:17px; }
-    .options-body{ padding:16px; gap:20px; }
+    .options-body{ padding:22px 16px; }
+    .options-body-inner{ gap:22px; }
     .options-footer{ padding:10px 16px 14px; }
   }
 </style>
@@ -400,7 +409,6 @@
       <div>score <b id="score">0</b></div>
       <div>combo <b id="combo">0</b></div>
       <div class="lives" id="lives">●●●</div>
-      <button type="button" class="icon-btn" id="optionsBtn" aria-label="Options">⚙</button>
     </div>
   </header>
 
@@ -417,7 +425,8 @@
         <div class="chip" data-mode="both">Both</div>
       </div>
       <button class="btn" id="startBtn">Start</button>
-      <div class="hint">Type to clear · Esc to reset your input · ⚙ for options</div>
+      <button type="button" class="btn-secondary" data-role="options-open">⚙ Options</button>
+      <div class="hint">Type to clear · Esc to reset your input</div>
     </div>
   </div>
 
@@ -434,30 +443,32 @@
     <button type="button" class="options-close" id="optionsClose" aria-label="Close">×</button>
   </div>
   <div class="options-body">
-    <div class="opt-section">
-      <div class="opt-label">Kana font</div>
-      <div class="modebar">
-        <div class="chip small active" data-font="serif">script — 明朝</div>
-        <div class="chip small" data-font="gothic">clean — ゴシック</div>
-        <div class="chip small" data-font="mixed">mixed</div>
+    <div class="options-body-inner">
+      <div class="opt-section">
+        <div class="opt-label">Kana font</div>
+        <div class="modebar">
+          <div class="chip small active" data-font="serif">script — 明朝</div>
+          <div class="chip small" data-font="gothic">clean — ゴシック</div>
+          <div class="chip small" data-font="mixed">mixed</div>
+        </div>
       </div>
-    </div>
-    <div class="opt-section slider-block">
-      <div class="slider-head">
-        <span class="sl-title">Similar-character grace</span>
-        <span class="sl-val" id="ambiguityVal">260ms</span>
+      <div class="opt-section slider-block">
+        <div class="slider-head">
+          <span class="sl-title">Similar-character grace</span>
+          <span class="sl-val" id="ambiguityVal">260ms</span>
+        </div>
+        <input type="range" id="ambiguitySlider" min="0" max="600" step="20" value="260">
+        <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
       </div>
-      <input type="range" id="ambiguitySlider" min="0" max="600" step="20" value="260">
-      <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
-    </div>
-    <div class="opt-section">
-      <div class="opt-label">Try it</div>
-      <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> below — see which one locks in with your current grace setting.</div>
-      <div class="test-chips" id="optTestChips"></div>
+      <div class="opt-section">
+        <div class="opt-label">Try it</div>
+        <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> below — see which one locks in with your current grace setting.</div>
+        <div class="test-chips" id="optTestChips"></div>
+      </div>
     </div>
   </div>
   <div class="options-footer">
-    <input type="text" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
+    <input type="text" class="options-footer-inner" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
   </div>
 </div>
 
@@ -764,6 +775,7 @@ function endGame(){
       <div class="chip" data-mode="both">Both</div>
     </div>
     <button class="btn" id="startBtn2">Play again</button>
+    <button type="button" class="btn-secondary" data-role="options-open">⚙ Options</button>
   `;
   // reflect current mode choice on the fresh chips
   document.getElementById('startBtn2').addEventListener('click', startGame);
@@ -786,7 +798,6 @@ let pendingResolve = null;
 // ---------------------------------------------------------------
 const optionsModal = document.getElementById('optionsModal');
 const optionsClose = document.getElementById('optionsClose');
-const optionsBtn = document.getElementById('optionsBtn');
 const optionsTestInput = document.getElementById('optionsTestInput');
 const optTestChips = document.getElementById('optTestChips');
 
@@ -855,7 +866,9 @@ function closeOptions(){
   optionsTestInput.blur();
   optionsTestInput.value = '';
 }
-optionsBtn.addEventListener('click', openOptions);
+document.addEventListener('click', (e)=>{
+  if(e.target.closest('[data-role="options-open"]')) openOptions();
+});
 optionsClose.addEventListener('click', closeOptions);
 
 function commitHit(guess){
