@@ -168,6 +168,7 @@
   @keyframes flash{ 0%{opacity:0.28;} 100%{opacity:0;} }
 
   footer{
+    display:none;
     width:100%; max-width:720px;
     padding:14px 20px 22px;
     z-index:5;
@@ -256,7 +257,7 @@
   }
   .test-hint b{ color:var(--ink); }
   .test-chips{
-    display:flex; gap:14px; align-items:center; justify-content:flex-start;
+    display:flex; gap:14px; align-items:center; justify-content:center;
     min-height:74px;
   }
   .test-chip{
@@ -267,6 +268,12 @@
     background:var(--paper-dark);
     border-radius:4px;
     transition:opacity .25s ease, transform .25s ease;
+    animation: testChipPop 340ms cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes testChipPop{
+    0%{ opacity:0; transform:scale(0.4) translateY(10px); }
+    65%{ opacity:1; transform:scale(1.08) translateY(0); }
+    100%{ opacity:1; transform:scale(1) translateY(0); }
   }
   .test-chip .tc-char{
     font-family:var(--kana-font); font-weight:600; font-size:30px; color:var(--ink);
@@ -430,7 +437,7 @@
     </div>
   </div>
 
-  <footer>
+  <footer id="gameFooter">
     <form id="typeForm" autocomplete="off">
       <input type="text" id="typeInput" placeholder="type romaji…" disabled>
     </form>
@@ -461,13 +468,13 @@
         <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
       </div>
       <div class="opt-section">
-        <div class="opt-label">Try it</div>
-        <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> below — see which one locks in with your current grace setting.</div>
-        <div class="test-chips" id="optTestChips"></div>
+        <button type="button" class="btn-secondary" id="testToggleBtn">TEST</button>
+        <div class="test-hint" id="testHint" style="display:none;">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in.</div>
+        <div class="test-chips" id="optTestChips" style="display:none;"></div>
       </div>
     </div>
   </div>
-  <div class="options-footer">
+  <div class="options-footer" id="optionsFooter" style="display:none;">
     <input type="text" class="options-footer-inner" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
   </div>
 </div>
@@ -538,6 +545,7 @@ const livesEl = document.getElementById('lives');
 const flashEl = document.getElementById('flash');
 const modebar = document.getElementById('modebar');
 const startBtn= document.getElementById('startBtn');
+const gameFooter = document.getElementById('gameFooter');
 
 const FONTS = {
   serif:  "'Noto Serif JP', serif",
@@ -629,6 +637,7 @@ function startGame(){
   active = [];
   updateHUD();
   overlay.style.display = 'none';
+  gameFooter.style.display = 'block';
   input.disabled = false;
   input.value = '';
   input.focus();
@@ -753,6 +762,7 @@ function endGame(){
   active.forEach(k=>{ cancelAnimationFrame(k.raf); k.el.remove(); });
   active = [];
   input.disabled = true;
+  gameFooter.style.display = 'none';
   overlay.style.display = 'flex';
   overlay.innerHTML = `
     <div class="seal-mark">終</div>
@@ -846,7 +856,6 @@ optionsTestInput.addEventListener('input', ()=>{
   testAttemptMatch(optionsTestInput.value.trim().toLowerCase());
 });
 optionsTestInput.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape'){ optionsTestInput.value = ''; return; }
   if(e.key !== 'Enter') return;
   e.preventDefault();
   clearTimeout(testPendingResolve);
@@ -854,22 +863,61 @@ optionsTestInput.addEventListener('keydown', (e)=>{
   if(guess && testKana.some(k => k.romaji === guess)) testCommitHit(guess);
 });
 
-function openOptions(){
-  optionsModal.style.display = 'flex';
+// ---------------------------------------------------------------
+// TEST toggle — reveals the test input + chips only while active,
+// so the options screen doesn't imply you can type before you can.
+// ---------------------------------------------------------------
+const testToggleBtn = document.getElementById('testToggleBtn');
+const testHint = document.getElementById('testHint');
+const optionsFooter = document.getElementById('optionsFooter');
+let optTestActive = false;
+
+function enterTestMode(){
+  optTestActive = true;
+  testToggleBtn.textContent = 'End test';
+  testHint.style.display = 'block';
+  optTestChips.style.display = 'flex';
+  optionsFooter.style.display = 'flex';
   optionsTestInput.value = '';
   spawnTestPair();
   setTimeout(()=> optionsTestInput.focus(), 60);
 }
-function closeOptions(){
+function exitTestModeUI(){
+  optTestActive = false;
   clearTimeout(testPendingResolve);
-  optionsModal.style.display = 'none';
+  testToggleBtn.textContent = 'TEST';
+  testHint.style.display = 'none';
+  optTestChips.style.display = 'none';
+  optTestChips.innerHTML = '';
+  optionsFooter.style.display = 'none';
   optionsTestInput.blur();
   optionsTestInput.value = '';
+}
+testToggleBtn.addEventListener('click', ()=>{
+  optTestActive ? exitTestModeUI() : enterTestMode();
+});
+
+function openOptions(){
+  optionsModal.style.display = 'flex';
+}
+function closeOptions(){
+  exitTestModeUI();
+  optionsModal.style.display = 'none';
 }
 document.addEventListener('click', (e)=>{
   if(e.target.closest('[data-role="options-open"]')) openOptions();
 });
 optionsClose.addEventListener('click', closeOptions);
+
+// Esc closes Options outright (and disperses any active test), matching
+// the same "reset your input" spirit Esc has during a real round
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Escape') return;
+  if(optionsModal.style.display === 'flex'){
+    e.preventDefault();
+    closeOptions();
+  }
+});
 
 function commitHit(guess){
   const candidates = active.filter(k=>k.romaji === guess);
