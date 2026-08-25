@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<title>墨雨 Kana Rain</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23F2EDE3'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle' fill='%23B23A2E'%3E雨%3C/text%3E%3C/svg%3E">
+
+<!-- Social preview -->
+<meta property="og:title" content="墨雨 Kana Rain">
+<meta property="og:description" content="A falling-kana typing game for learning Hiragana and Katakana. Type the romaji before it hits the line.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://dj-c4.github.io/kana-rain/kana-rain-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://dj-c4.github.io/kana-rain/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="墨雨 Kana Rain">
+<meta name="twitter:description" content="A falling-kana typing game for learning Hiragana and Katakana.">
+<meta name="twitter:image" content="https://dj-c4.github.io/kana-rain/kana-rain-preview.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;900&family=Noto+Sans+JP:wght@400;600;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F2EDE3;
+    --paper-dark: #E7DFCF;
+    --ink: #1C1B19;
+    --ink-soft: #4B4740;
+    --seal: #B23A2E;
+    --seal-dark: #8C2C22;
+    --gold: #B8923E;
+    --line: rgba(28,27,25,0.14);
+    --kana-font: 'Noto Serif JP', serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0;
+    height:100vh;
+    height:100dvh;
+    height:calc(var(--vh, 1vh) * 100);
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(178,58,46,0.05), transparent 40%),
+      radial-gradient(ellipse at 100% 110%, rgba(184,146,62,0.06), transparent 45%),
+      var(--paper);
+    font-family:'Zen Kaku Gothic New', system-ui, sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+  }
+  /* faint paper fiber texture */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(28,27,25,0.025) 39px),
+      repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(28,27,25,0.025) 39px);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .wrap{
+    position:relative;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    height:calc(var(--vh, 1vh) * 100);
+    display:flex; flex-direction:column;
+    align-items:center;
+  }
+
+  header{
+    width:100%; max-width:720px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:18px 20px 8px;
+    z-index:5;
+  }
+  .title{
+    font-family:'Noto Serif JP', serif;
+    font-weight:900; font-size:22px; letter-spacing:0.04em;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .title small{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:500; font-size:11px; letter-spacing:0.14em;
+    color:var(--ink-soft); text-transform:uppercase;
+  }
+  .stats{ display:flex; gap:18px; font-size:13px; color:var(--ink-soft); }
+  .stats b{ color:var(--ink); font-size:16px; font-weight:700; }
+  .lives{ color:var(--seal); letter-spacing:2px; }
+
+  .fontbar{
+    width:100%; max-width:720px;
+    display:flex; align-items:center; gap:8px;
+    padding:0 20px 12px;
+    z-index:5;
+  }
+  .fontbar-label{
+    font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
+    margin-right:2px;
+  }
+  .chip.small{ font-size:11px; padding:5px 10px; }
+
+  .field{
+    position:relative;
+    width:100%; max-width:720px; flex:1;
+    border-left:1px solid var(--line); border-right:1px solid var(--line);
+    overflow:hidden;
+    z-index:2;
+  }
+  .deadline{
+    position:absolute; left:0; right:0; bottom:78px;
+    height:0; border-top:1px dashed var(--seal);
+    opacity:0.55;
+  }
+  @media (max-width: 480px){
+    .deadline{ bottom:40px; }
+  }
+  .deadline::after{
+    content:"締"; position:absolute; right:6px; top:-19px;
+    font-family:'Noto Serif JP',serif; font-size:12px; color:var(--seal); opacity:0.7;
+  }
+
+  .kana{
+    position:absolute;
+    font-family:var(--kana-font);
+    font-weight:600;
+    line-height:1;
+    color:var(--ink);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    user-select:none;
+    will-change:transform;
+    filter:none;
+    transition:filter .15s ease, color .15s ease;
+  }
+  .kana .romaji{
+    display:block;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:500;
+    text-align:center;
+    font-size:0.26em;
+    color:var(--ink-soft);
+    letter-spacing:0.04em;
+    margin-top:2px;
+  }
+  .kana.locked{ color:var(--gold); text-shadow:0 0 12px rgba(184,146,62,0.35); }
+  .kana.missed{ color:var(--seal); }
+  .kana.missed .romaji{ color:var(--seal); letter-spacing:0.02em; }
+
+  /* stamp burst on correct hit */
+  .stamp{
+    position:absolute;
+    width:64px; height:64px;
+    border:3px solid var(--seal);
+    border-radius:6px;
+    color:var(--seal);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--kana-font); font-weight:900; font-size:26px;
+    transform:rotate(-8deg) scale(0.6);
+    opacity:0;
+    pointer-events:none;
+    animation:stampHit 480ms ease-out forwards;
+    z-index:6;
+  }
+  @keyframes stampHit{
+    0%{ opacity:0; transform:rotate(-8deg) scale(1.6); }
+    18%{ opacity:0.9; transform:rotate(-8deg) scale(0.92); }
+    35%{ transform:rotate(-8deg) scale(1); opacity:0.85;}
+    100%{ opacity:0; transform:rotate(-8deg) scale(1.05); }
+  }
+
+  .miss-flash{
+    position:absolute; inset:0; background:var(--seal); opacity:0;
+    pointer-events:none; z-index:7;
+  }
+  .miss-flash.go{ animation:flash 260ms ease-out; }
+  @keyframes flash{ 0%{opacity:0.28;} 100%{opacity:0;} }
+
+  footer{
+    width:100%; max-width:720px;
+    padding:14px 20px 22px;
+    z-index:5;
+  }
+  form{ display:flex; gap:10px; align-items:center; }
+  input[type=text]{
+    flex:1;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:18px; font-weight:500;
+    padding:12px 16px;
+    background:var(--paper-dark);
+    border:1px solid var(--line);
+    border-bottom:2px solid var(--ink);
+    border-radius:2px;
+    color:var(--ink);
+    outline:none;
+    letter-spacing:0.02em;
+  }
+  input[type=text]:focus{ border-bottom-color:var(--seal); }
+  input[type=text]::placeholder{ color:#9C9584; }
+
+  .modebar{
+    display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;
+  }
+  .chip{
+    font-size:12px; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--paper-dark);
+    color:var(--ink-soft); cursor:pointer; user-select:none;
+    transition:all .12s ease;
+  }
+  .chip.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .chip:hover{ border-color:var(--ink); }
+
+  .overlay{
+    position:absolute; inset:0; z-index:20;
+    background:rgba(242,237,227,0.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:14px;
+  }
+  .overlay h1{
+    font-family:'Noto Serif JP', serif; font-weight:900; font-size:42px; margin:0;
+  }
+  .overlay .seal-mark{
+    width:78px; height:78px; border:3px solid var(--seal); border-radius:10px;
+    color:var(--seal); display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Serif JP',serif; font-size:30px; font-weight:900;
+    transform:rotate(-6deg); margin-bottom:4px;
+  }
+  .overlay p{ color:var(--ink-soft); max-width:420px; line-height:1.5; margin:0; }
+
+  .recap{
+    display:flex; gap:14px; margin:2px 0 4px;
+  }
+  .recap-item{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-bottom:2px solid var(--seal);
+    background:var(--paper-dark);
+    border-radius:2px;
+    min-width:56px;
+  }
+  .recap-item .rc-char{
+    font-family:var(--kana-font); font-weight:600; font-size:26px; color:var(--seal);
+  }
+  .recap-item .rc-romaji{
+    font-size:11px; color:var(--ink-soft); letter-spacing:0.03em;
+  }
+  .recap-label{
+    font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
+    margin-top:6px;
+  }
+  .btn{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:15px;
+    background:var(--ink); color:var(--paper); border:none;
+    padding:12px 28px; border-radius:2px; cursor:pointer; letter-spacing:0.03em;
+    margin-top:6px;
+  }
+  .btn:hover{ background:var(--seal); }
+  .hint{ font-size:12px; color:#9C9584; }
+
+  .btn-outline{
+    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:13px;
+    background:transparent; color:var(--ink); border:1.5px solid var(--ink);
+    padding:9px 22px; border-radius:2px; cursor:pointer; letter-spacing:0.08em;
+  }
+  .btn-outline:hover{ background:var(--ink); color:var(--paper); }
+
+  .test-panel{
+    display:none; flex-direction:column; align-items:center; gap:10px;
+    margin-top:2px;
+  }
+  .test-hint{
+    font-size:12px; color:var(--ink-soft); max-width:320px; line-height:1.5;
+  }
+  .test-hint b{ color:var(--ink); }
+  .test-chips{
+    display:flex; gap:14px; align-items:center; justify-content:center;
+    min-height:74px;
+  }
+  .test-chip{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:12px 18px;
+    border:1px solid var(--line);
+    border-bottom:3px solid var(--gold);
+    background:var(--paper-dark);
+    border-radius:4px;
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .test-chip .tc-char{
+    font-family:var(--kana-font); font-weight:600; font-size:30px; color:var(--ink);
+  }
+  .test-chip .tc-romaji{ font-size:12px; color:var(--ink-soft); letter-spacing:0.02em; }
+  .test-chip.hit{ opacity:0; transform:scale(0.7); }
+  .link-btn{
+    background:none; border:none; padding:0; margin-top:-2px;
+    font-family:'Zen Kaku Gothic New', sans-serif; font-size:11px;
+    color:var(--ink-soft); text-decoration:underline; cursor:pointer;
+  }
+  .link-btn:hover{ color:var(--seal); }
+
+  .slider-block{
+    width:100%; max-width:360px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .slider-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    font-size:13px;
+  }
+  .slider-head .sl-title{
+    color:var(--ink); font-weight:700; letter-spacing:0.02em;
+  }
+  .slider-head .sl-val{
+    color:var(--seal); font-weight:700; font-variant-numeric:tabular-nums;
+  }
+  .sl-help{
+    font-size:11.5px; color:var(--ink-soft); line-height:1.4; text-align:left;
+  }
+  input[type=range]{
+    width:100%; -webkit-appearance:none; appearance:none;
+    height:3px; background:var(--line); border-radius:2px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--seal); cursor:pointer;
+    border:2px solid var(--paper);
+    box-shadow:0 0 0 1px var(--seal);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%;
+    background:var(--seal); cursor:pointer; border:2px solid var(--paper);
+    box-shadow:0 0 0 1px var(--seal);
+  }
+
+  ::selection{ background:var(--gold); color:var(--paper); }
+
+  /* ---- mobile tightening ---- */
+  @media (max-width: 480px){
+    header{ padding:12px 14px 6px; }
+    .title{ font-size:17px; gap:6px; }
+    .title small{ font-size:9px; }
+    .stats{ gap:11px; font-size:11px; }
+    .stats b{ font-size:13px; }
+    .fontbar{ padding:0 14px 8px; }
+    .fontbar-label{ display:none; }
+    .chip.small{ font-size:10px; padding:4px 9px; }
+    footer{ padding:6px 14px 10px; }
+    input[type=text]{ font-size:16px; padding:10px 14px; }
+    .overlay{ padding:16px; gap:10px; }
+    .overlay h1{ font-size:30px; }
+    .overlay .seal-mark{ width:60px; height:60px; font-size:24px; }
+    .overlay p{ font-size:14px; }
+    .modebar{ gap:6px; margin-bottom:6px; }
+    .recap-item{ padding:8px 10px; min-width:46px; }
+    .recap-item .rc-char{ font-size:22px; }
+  }
+
+  /* while the keyboard is open, give the falling field back its room —
+     the font picker isn't needed mid-round, so tuck it away */
+  body.keyboard-open .fontbar{
+    max-height:0; padding-top:0; padding-bottom:0; opacity:0;
+    overflow:hidden; pointer-events:none;
+  }
+  body.keyboard-open header{ padding-bottom:4px; }
+  .fontbar{ transition: max-height .18s ease, opacity .18s ease, padding .18s ease; max-height:60px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">墨雨 <small>kana rain</small></div>
+    <div class="stats">
+      <div>score <b id="score">0</b></div>
+      <div>combo <b id="combo">0</b></div>
+      <div class="lives" id="lives">●●●</div>
+    </div>
+  </header>
+  <div class="fontbar" id="fontbar">
+    <span class="fontbar-label">font</span>
+    <div class="chip small active" data-font="serif">script — 明朝</div>
+    <div class="chip small" data-font="gothic">clean — ゴシック</div>
+    <div class="chip small" data-font="mixed">mixed</div>
+  </div>
+
+  <div class="field" id="field">
+    <div class="deadline"></div>
+    <div class="miss-flash" id="flash"></div>
+    <div class="overlay" id="overlay">
+      <div class="seal-mark">始</div>
+      <h1>Kana Rain</h1>
+      <p>Kana fall from the top. Type the <b>romaji</b> — it clears the moment your spelling matches, no need to hit Enter. Pick a set to begin.</p>
+      <div class="modebar" id="modebar">
+        <div class="chip active" data-mode="hira">Hiragana</div>
+        <div class="chip" data-mode="kata">Katakana</div>
+        <div class="chip" data-mode="both">Both</div>
+      </div>
+      <div class="modebar">
+        <div class="chip small active" data-font="serif">script — 明朝</div>
+        <div class="chip small" data-font="gothic">clean — ゴシック</div>
+        <div class="chip small" data-font="mixed">mixed</div>
+      </div>
+      <div class="slider-block">
+        <div class="slider-head">
+          <span class="sl-title">Similar-character grace</span>
+          <span class="sl-val" id="ambiguityVal">260ms</span>
+        </div>
+        <input type="range" id="ambiguitySlider" min="0" max="600" step="20" value="260">
+        <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
+      </div>
+      <button type="button" class="btn-outline" data-role="test-btn">TEST</button>
+      <div class="test-panel">
+        <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in with your current grace setting.</div>
+        <div class="test-chips"></div>
+        <button type="button" class="link-btn" data-role="test-exit">exit test</button>
+      </div>
+      <button class="btn" id="startBtn">Start</button>
+      <div class="hint">Type to clear · Esc to reset your input</div>
+    </div>
+  </div>
+
+  <footer>
+    <form id="typeForm" autocomplete="off">
+      <input type="text" id="typeInput" placeholder="type romaji…" disabled>
+    </form>
+  </footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// TUNABLE KNOBS — this is our shared dial board, adjust freely
+// ---------------------------------------------------------------
+const TUNE = {
+  spawnIntervalStart: 2800,   // ms between spawns at game start
+  spawnIntervalMin:   900,    // fastest spawn rate we ramp down to
+  fallDurationStart: 11000,   // ms for a kana to fall start->deadline at game start
+  fallDurationMin:    4200,   // fastest fall (ms) we ramp down to
+  rampSeconds:        90,     // seconds to go from "start" to "min" difficulty
+  lives:               3,
+  comboScoreStep:      10,    // base score per correct hit
+  comboBonusPerStreak: 2,     // extra score per combo point (capped)
+  comboBonusCap:       40,
+  ambiguityWindowMs:   260,   // grace period for prefix collisions like n/na/ni/nu/ne/no
+};
+
+// ---------------------------------------------------------------
+// KANA DATA
+// ---------------------------------------------------------------
+const HIRA = [
+["あ","a"],["い","i"],["う","u"],["え","e"],["お","o"],
+["か","ka"],["き","ki"],["く","ku"],["け","ke"],["こ","ko"],
+["さ","sa"],["し","shi"],["す","su"],["せ","se"],["そ","so"],
+["た","ta"],["ち","chi"],["つ","tsu"],["て","te"],["と","to"],
+["な","na"],["に","ni"],["ぬ","nu"],["ね","ne"],["の","no"],
+["は","ha"],["ひ","hi"],["ふ","fu"],["へ","he"],["ほ","ho"],
+["ま","ma"],["み","mi"],["む","mu"],["め","me"],["も","mo"],
+["や","ya"],["ゆ","yu"],["よ","yo"],
+["ら","ra"],["り","ri"],["る","ru"],["れ","re"],["ろ","ro"],
+["わ","wa"],["を","wo"],["ん","n"],
+];
+const KATA = [
+["ア","a"],["イ","i"],["ウ","u"],["エ","e"],["オ","o"],
+["カ","ka"],["キ","ki"],["ク","ku"],["ケ","ke"],["コ","ko"],
+["サ","sa"],["シ","shi"],["ス","su"],["セ","se"],["ソ","so"],
+["タ","ta"],["チ","chi"],["ツ","tsu"],["テ","te"],["ト","to"],
+["ナ","na"],["ニ","ni"],["ヌ","nu"],["ネ","ne"],["ノ","no"],
+["ハ","ha"],["ヒ","hi"],["フ","fu"],["ヘ","he"],["ホ","ho"],
+["マ","ma"],["ミ","mi"],["ム","mu"],["メ","me"],["モ","mo"],
+["ヤ","ya"],["ユ","yu"],["ヨ","yo"],
+["ラ","ra"],["リ","ri"],["ル","ru"],["レ","re"],["ロ","ro"],
+["ワ","wa"],["ヲ","wo"],["ン","n"],
+];
+
+// ---------------------------------------------------------------
+// STATE
+// ---------------------------------------------------------------
+let pool = HIRA.slice();
+let active = [];      // falling kana objects
+let score = 0, combo = 0, bestCombo = 0, lives = TUNE.lives;
+let running = false, startTime = 0;
+let spawnTimer = null;
+let idCounter = 0;
+let missHistory = [];   // last few kana that cost a life, most recent first
+
+const field   = document.getElementById('field');
+const overlay = document.getElementById('overlay');
+const input   = document.getElementById('typeInput');
+const form    = document.getElementById('typeForm');
+const scoreEl = document.getElementById('score');
+const comboEl = document.getElementById('combo');
+const livesEl = document.getElementById('lives');
+const flashEl = document.getElementById('flash');
+const modebar = document.getElementById('modebar');
+const startBtn= document.getElementById('startBtn');
+const fontbar = document.getElementById('fontbar');
+
+const FONTS = {
+  serif:  "'Noto Serif JP', serif",
+  gothic: "'Noto Sans JP', sans-serif",
+};
+let fontMode = 'serif'; // 'serif' | 'gothic' | 'mixed'
+
+function setFont(key){
+  fontMode = key;
+  if(key !== 'mixed'){
+    document.documentElement.style.setProperty('--kana-font', FONTS[key]);
+  }
+  // keep every font chip on the page (header + either overlay) in sync
+  document.querySelectorAll('[data-font]').forEach(chip=>{
+    chip.classList.toggle('active', chip.dataset.font === key);
+  });
+}
+function pickKanaFont(){
+  if(fontMode === 'mixed'){
+    return Math.random() < 0.5 ? FONTS.serif : FONTS.gothic;
+  }
+  return FONTS[fontMode];
+}
+document.addEventListener('click', (e)=>{
+  const chip = e.target.closest('[data-font]');
+  if(!chip) return;
+  setFont(chip.dataset.font);
+});
+
+// ---------------------------------------------------------------
+// MOBILE VIEWPORT HANDLING
+// ---------------------------------------------------------------
+// mobile browsers resize the *visual* viewport when the keyboard opens,
+// but 100vh often tracks the layout viewport instead — this keeps a
+// reliable --vh in sync so the field never gets clipped or overlapped.
+function setVH(){
+  const vp = window.visualViewport;
+  const h = vp ? vp.height : window.innerHeight;
+  document.documentElement.style.setProperty('--vh', (h / 100) + 'px');
+}
+setVH();
+window.addEventListener('resize', setVH);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setVH);
+}
+
+// tuck away the font picker while the on-screen keyboard is up, so the
+// falling field keeps as much room as possible on small screens
+input.addEventListener('focus', ()=> document.body.classList.add('keyboard-open'));
+input.addEventListener('blur',  ()=> document.body.classList.remove('keyboard-open'));
+
+
+modebar.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip || chip.dataset.font) return;
+  [...modebar.children].forEach(c=>{ if(c.dataset.mode) c.classList.remove('active'); });
+  chip.classList.add('active');
+  const mode = chip.dataset.mode;
+  pool = mode==='hira' ? HIRA.slice() : mode==='kata' ? KATA.slice() : HIRA.concat(KATA);
+});
+
+startBtn.addEventListener('click', startGame);
+
+const ambiguitySlider = document.getElementById('ambiguitySlider');
+const ambiguityVal = document.getElementById('ambiguityVal');
+ambiguitySlider.addEventListener('input', ()=>{
+  TUNE.ambiguityWindowMs = parseInt(ambiguitySlider.value, 10);
+  ambiguityVal.textContent = TUNE.ambiguityWindowMs + 'ms';
+});
+
+function difficultyProgress(){
+  const elapsed = (Date.now() - startTime)/1000;
+  return Math.min(1, elapsed / TUNE.rampSeconds);
+}
+function currentSpawnInterval(){
+  const t = difficultyProgress();
+  return TUNE.spawnIntervalStart + (TUNE.spawnIntervalMin - TUNE.spawnIntervalStart) * t;
+}
+function currentFallDuration(){
+  const t = difficultyProgress();
+  return TUNE.fallDurationStart + (TUNE.fallDurationMin - TUNE.fallDurationStart) * t;
+}
+
+function startGame(){
+  testMode = false;
+  clearTimeout(testPendingResolve);
+  clearTimeout(pendingResolve);
+  score = 0; combo = 0; bestCombo = 0; lives = TUNE.lives;
+  missHistory = [];
+  active.forEach(k=>k.el.remove());
+  active = [];
+  updateHUD();
+  overlay.style.display = 'none';
+  input.disabled = false;
+  input.value = '';
+  input.focus();
+  running = true;
+  startTime = Date.now();
+  scheduleSpawn();
+}
+
+function scheduleSpawn(){
+  clearTimeout(spawnTimer);
+  if(!running) return;
+  spawnKana();
+  spawnTimer = setTimeout(scheduleSpawn, currentSpawnInterval());
+}
+
+function spawnKana(){
+  const fieldW = field.clientWidth;
+  const isSmall = fieldW < 480;
+  const margin = isSmall ? 30 : 48;
+  const x = margin + Math.random() * (fieldW - margin*2);
+  const [char, romaji] = pool[Math.floor(Math.random()*pool.length)];
+
+  const el = document.createElement('div');
+  el.className = 'kana';
+  el.style.left = x + 'px';
+  el.style.top = '-60px';
+  el.style.fontSize = (isSmall ? 26 : 34) + 'px';
+  const kanaFont = pickKanaFont();
+  el.style.fontFamily = kanaFont;
+  el.innerHTML = char + '<span class="romaji">'+ '·'.repeat(romaji.length) +'</span>';
+  field.appendChild(el);
+
+  const duration = currentFallDuration();
+  const deadlineY = field.clientHeight - (isSmall ? 40 : 78);
+
+  const obj = { id: idCounter++, char, romaji, el, x, fontFamily: kanaFont, startTs: performance.now(), duration, deadlineY, resolved:false };
+  active.push(obj);
+  animateFall(obj);
+}
+
+function animateFall(obj){
+  function frame(now){
+    if(obj.resolved) return;
+    const elapsed = now - obj.startTs;
+    const progress = Math.min(1, elapsed / obj.duration);
+    const y = -60 + progress * (obj.deadlineY + 60);
+    obj.el.style.top = y + 'px';
+    if(progress >= 1){
+      missKana(obj);
+      return;
+    }
+    obj.raf = requestAnimationFrame(frame);
+  }
+  obj.raf = requestAnimationFrame(frame);
+}
+
+function missKana(obj){
+  if(obj.resolved) return;
+  obj.resolved = true;
+  cancelAnimationFrame(obj.raf);
+  obj.el.classList.add('missed');
+  const romajiSpan = obj.el.querySelector('.romaji');
+  if(romajiSpan) romajiSpan.textContent = obj.romaji;
+  obj.el.style.transition = 'opacity .6s ease';
+  obj.el.style.opacity = '0';
+  setTimeout(()=>obj.el.remove(), 620);
+  active = active.filter(k=>k!==obj);
+  combo = 0;
+  lives -= 1;
+  missHistory.unshift({ char: obj.char, romaji: obj.romaji, fontFamily: obj.fontFamily });
+  if(missHistory.length > 3) missHistory.length = 3;
+  flashMiss();
+  updateHUD();
+  if(lives <= 0) endGame();
+}
+
+function flashMiss(){
+  flashEl.classList.remove('go');
+  void flashEl.offsetWidth;
+  flashEl.classList.add('go');
+}
+
+function hitKana(obj){
+  obj.resolved = true;
+  cancelAnimationFrame(obj.raf);
+  active = active.filter(k=>k!==obj);
+
+  // stamp burst at kana's current position
+  const rect = obj.el.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+  const stamp = document.createElement('div');
+  stamp.className = 'stamp';
+  stamp.textContent = obj.char;
+  stamp.style.fontFamily = obj.fontFamily || 'var(--kana-font)';
+  stamp.style.left = (rect.left - fieldRect.left - 32 + rect.width/2) + 'px';
+  stamp.style.top  = (rect.top  - fieldRect.top  - 32 + rect.height/2) + 'px';
+  field.appendChild(stamp);
+  setTimeout(()=>stamp.remove(), 500);
+
+  obj.el.classList.add('locked');
+  obj.el.style.transition = 'opacity .3s ease, transform .3s ease';
+  obj.el.style.opacity = '0';
+  obj.el.style.transform = 'scale(0.7)';
+  setTimeout(()=>obj.el.remove(), 300);
+
+  combo += 1;
+  if(combo > bestCombo) bestCombo = combo;
+  const bonus = Math.min(TUNE.comboBonusCap, combo * TUNE.comboBonusPerStreak);
+  score += TUNE.comboScoreStep + bonus;
+  updateHUD();
+}
+
+function updateHUD(){
+  scoreEl.textContent = score;
+  comboEl.textContent = combo;
+  livesEl.textContent = '●'.repeat(Math.max(0,lives)) + '○'.repeat(TUNE.lives-Math.max(0,lives));
+}
+
+function endGame(){
+  running = false;
+  clearTimeout(spawnTimer);
+  active.forEach(k=>{ cancelAnimationFrame(k.raf); k.el.remove(); });
+  active = [];
+  input.disabled = true;
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `
+    <div class="seal-mark">終</div>
+    <h1>終了 — Round Over</h1>
+    <p>Score <b>${score}</b> · best combo <b>${bestCombo}</b></p>
+    ${missHistory.length ? `
+      <div class="recap-label">what got you</div>
+      <div class="recap">
+        ${missHistory.map(m => `
+          <div class="recap-item">
+            <span class="rc-char" style="font-family:${m.fontFamily || 'var(--kana-font)'}">${m.char}</span>
+            <span class="rc-romaji">${m.romaji}</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+    <div class="modebar" id="modebar2">
+      <div class="chip active" data-mode="hira">Hiragana</div>
+      <div class="chip" data-mode="kata">Katakana</div>
+      <div class="chip" data-mode="both">Both</div>
+    </div>
+    <div class="modebar">
+      <div class="chip small" data-font="serif">script — 明朝</div>
+      <div class="chip small" data-font="gothic">clean — ゴシック</div>
+      <div class="chip small" data-font="mixed">mixed</div>
+    </div>
+    <div class="slider-block">
+      <div class="slider-head">
+        <span class="sl-title">Similar-character grace</span>
+        <span class="sl-val" id="ambiguityVal2">${TUNE.ambiguityWindowMs}ms</span>
+      </div>
+      <input type="range" id="ambiguitySlider2" min="0" max="600" step="20" value="${TUNE.ambiguityWindowMs}">
+      <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
+    </div>
+    <button type="button" class="btn-outline" data-role="test-btn">TEST</button>
+    <div class="test-panel">
+      <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in with your current grace setting.</div>
+      <div class="test-chips"></div>
+      <button type="button" class="link-btn" data-role="test-exit">exit test</button>
+    </div>
+    <button class="btn" id="startBtn2">Play again</button>
+  `;
+  // reflect current mode + font choice on the fresh chips
+  const currentModeChip = [...document.querySelectorAll('#modebar2 [data-mode]')]
+    .find(c => pool === (c.dataset.mode==='hira'?HIRA:c.dataset.mode==='kata'?KATA:HIRA.concat(KATA)));
+  document.querySelectorAll('#overlay [data-font]').forEach(c=>c.classList.toggle('active', c.dataset.font===fontMode));
+
+  document.getElementById('startBtn2').addEventListener('click', startGame);
+  const ambiguitySlider2 = document.getElementById('ambiguitySlider2');
+  const ambiguityVal2 = document.getElementById('ambiguityVal2');
+  ambiguitySlider2.addEventListener('input', ()=>{
+    TUNE.ambiguityWindowMs = parseInt(ambiguitySlider2.value, 10);
+    ambiguityVal2.textContent = TUNE.ambiguityWindowMs + 'ms';
+    ambiguitySlider.value = TUNE.ambiguityWindowMs;
+    ambiguityVal.textContent = TUNE.ambiguityWindowMs + 'ms';
+  });
+  document.getElementById('modebar2').addEventListener('click', (e)=>{
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    [...e.currentTarget.children].forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    const mode = chip.dataset.mode;
+    pool = mode==='hira' ? HIRA.slice() : mode==='kata' ? KATA.slice() : HIRA.concat(KATA);
+  });
+}
+
+let pendingResolve = null;
+
+// ---------------------------------------------------------------
+// TEST MODE — lets the player feel the "similar-character grace"
+// setting on the home/end screens using the same input box and the
+// same matching rules as the real game, without starting a round.
+// ---------------------------------------------------------------
+let testMode = false;
+let testKana = [];
+let testPendingResolve = null;
+const TEST_LONG = [['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no']];
+
+function testPanelEls(){
+  return {
+    panel: overlay.querySelector('.test-panel'),
+    chipsArea: overlay.querySelector('.test-chips'),
+  };
+}
+
+function spawnTestPair(){
+  const { chipsArea } = testPanelEls();
+  if(!chipsArea) return;
+  chipsArea.innerHTML = '';
+  testKana = [];
+  const [lchar, lromaji] = TEST_LONG[Math.floor(Math.random()*TEST_LONG.length)];
+  [{char:'ん', romaji:'n'}, {char:lchar, romaji:lromaji}].forEach(({char, romaji})=>{
+    const el = document.createElement('div');
+    el.className = 'test-chip';
+    el.innerHTML = `<span class="tc-char">${char}</span><span class="tc-romaji">${romaji}</span>`;
+    chipsArea.appendChild(el);
+    testKana.push({ char, romaji, el });
+  });
+}
+
+function testCommitHit(guess){
+  const idx = testKana.findIndex(k => k.romaji === guess);
+  if(idx === -1) return;
+  testKana[idx].el.classList.add('hit');
+  testKana.splice(idx, 1);
+  input.value = '';
+  if(testKana.length === 0) setTimeout(spawnTestPair, 450);
+}
+
+function testAttemptMatch(guess){
+  clearTimeout(testPendingResolve);
+  testPendingResolve = null;
+  if(!guess) return;
+  const exact = testKana.some(k => k.romaji === guess);
+  const isPrefixOfSomethingOnscreen = testKana.some(k => k.romaji.length > guess.length && k.romaji.startsWith(guess));
+  if(exact && isPrefixOfSomethingOnscreen){
+    testPendingResolve = setTimeout(()=>{
+      if(input.value.trim().toLowerCase() === guess) testCommitHit(guess);
+    }, TUNE.ambiguityWindowMs);
+  } else if(exact){
+    testCommitHit(guess);
+  }
+}
+
+function startTestMode(){
+  testMode = true;
+  const { panel } = testPanelEls();
+  if(panel) panel.style.display = 'flex';
+  input.disabled = false;
+  input.value = '';
+  input.focus();
+  spawnTestPair();
+}
+
+function exitTestMode(){
+  testMode = false;
+  clearTimeout(testPendingResolve);
+  const { panel } = testPanelEls();
+  if(panel) panel.style.display = 'none';
+  input.disabled = true;
+  input.value = '';
+}
+
+document.addEventListener('click', (e)=>{
+  if(e.target.closest('[data-role="test-btn"]')){ startTestMode(); return; }
+  if(e.target.closest('[data-role="test-exit"]')){ exitTestMode(); return; }
+});
+
+function commitHit(guess){
+  const candidates = active.filter(k=>k.romaji === guess);
+  if(!candidates.length) return;
+  candidates.sort((a,b)=> parseFloat(b.el.style.top) - parseFloat(a.el.style.top));
+  hitKana(candidates[0]);
+  input.value = '';
+}
+
+// Handles the "n" vs "na/ni/nu/ne/no" collision (and any future case like it):
+// if a guess exactly matches one falling kana AND is also the start of a
+// longer one that's currently on screen, we can't tell yet which the player
+// means — so we give a brief window for more keystrokes before committing.
+function attemptMatch(guess){
+  clearTimeout(pendingResolve);
+  pendingResolve = null;
+  if(!guess) return;
+
+  const exact = active.filter(k => k.romaji === guess);
+  const isPrefixOfSomethingOnscreen = active.some(k => k.romaji.length > guess.length && k.romaji.startsWith(guess));
+
+  if(exact.length && isPrefixOfSomethingOnscreen){
+    pendingResolve = setTimeout(()=>{
+      if(input.value.trim().toLowerCase() === guess) commitHit(guess);
+    }, TUNE.ambiguityWindowMs);
+  } else if(exact.length){
+    commitHit(guess);
+  }
+}
+
+form.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const guess = input.value.trim().toLowerCase();
+  if(!guess) return;
+
+  if(running){
+    clearTimeout(pendingResolve);
+    // match against the kana that's fallen furthest (most urgent) first
+    const candidates = active.filter(k=>k.romaji === guess);
+    if(candidates.length){
+      candidates.sort((a,b)=> parseFloat(b.el.style.top) - parseFloat(a.el.style.top));
+      hitKana(candidates[0]);
+      input.value = '';
+    } else {
+      // wrong guess: small shake, no life loss (typos shouldn't be punished as hard as misses)
+      input.style.borderBottomColor = 'var(--seal)';
+      setTimeout(()=>{ input.style.borderBottomColor = ''; }, 180);
+    }
+  } else if(testMode){
+    clearTimeout(testPendingResolve);
+    if(testKana.some(k => k.romaji === guess)){
+      testCommitHit(guess);
+    } else {
+      input.style.borderBottomColor = 'var(--seal)';
+      setTimeout(()=>{ input.style.borderBottomColor = ''; }, 180);
+    }
+  }
+});
+
+input.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ input.value=''; }
+});
+
+// match live as you type, instead of waiting for Enter
+input.addEventListener('input', ()=>{
+  const guess = input.value.trim().toLowerCase();
+  if(running){ attemptMatch(guess); }
+  else if(testMode){ testAttemptMatch(guess); }
+});
+
+// clicking chips/buttons steals focus from the input — pull it back whenever the round is live
+document.addEventListener('click', (e)=>{
+  if(!running && !testMode) return;
+  if(e.target.closest('input')) return;
+  setTimeout(()=> input.focus(), 0);
+});
+
+window.addEventListener('resize', ()=>{
+  // reposition deadline-dependent fall targets on resize
+  const isSmall = field.clientWidth < 480;
+  active.forEach(k=>{ k.deadlineY = field.clientHeight - (isSmall ? 40 : 78); });
+});
+</script>
+</body>
+</html>
