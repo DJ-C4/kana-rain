@@ -90,16 +90,6 @@
   .stats b{ color:var(--ink); font-size:16px; font-weight:700; }
   .lives{ color:var(--seal); letter-spacing:2px; }
 
-  .fontbar{
-    width:100%; max-width:720px;
-    display:flex; align-items:center; gap:8px;
-    padding:0 20px 12px;
-    z-index:5;
-  }
-  .fontbar-label{
-    font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
-    margin-right:2px;
-  }
   .chip.small{ font-size:11px; padding:5px 10px; }
 
   .field{
@@ -261,17 +251,6 @@
   .btn:hover{ background:var(--seal); }
   .hint{ font-size:12px; color:#9C9584; }
 
-  .btn-outline{
-    font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:13px;
-    background:transparent; color:var(--ink); border:1.5px solid var(--ink);
-    padding:9px 22px; border-radius:2px; cursor:pointer; letter-spacing:0.08em;
-  }
-  .btn-outline:hover{ background:var(--ink); color:var(--paper); }
-
-  .test-panel{
-    display:none; flex-direction:column; align-items:center; gap:10px;
-    margin-top:2px;
-  }
   .test-hint{
     font-size:12px; color:var(--ink-soft); max-width:320px; line-height:1.5;
   }
@@ -344,8 +323,6 @@
     .title small{ font-size:9px; }
     .stats{ gap:11px; font-size:11px; }
     .stats b{ font-size:13px; }
-    .fontbar{ padding:0 14px 8px; }
-    .fontbar-label{ display:none; }
     .chip.small{ font-size:10px; padding:4px 9px; }
     footer{ padding:6px 14px 10px; }
     input[type=text]{ font-size:16px; padding:10px 14px; }
@@ -360,47 +337,58 @@
     .slider-block{ gap:3px; }
     .slider-head{ font-size:12px; }
     .sl-help{ font-size:10.5px; line-height:1.35; }
-    .btn-outline{ padding:7px 18px; font-size:12px; }
-    .test-panel{ gap:6px; }
-    .test-hint{ font-size:10.5px; max-width:280px; }
-    .test-chips{ min-height:56px; gap:10px; }
-    .test-chip{ padding:8px 12px; }
-    .test-chip .tc-char{ font-size:24px; }
-    .test-chip .tc-romaji{ font-size:10px; }
     .btn{ padding:10px 22px; font-size:14px; margin-top:2px; }
     .hint{ font-size:10px; }
   }
 
-  /* while the keyboard is open, give the falling field back its room —
-     the font picker isn't needed mid-round, so tuck it away */
-  body.keyboard-open .fontbar{
-    max-height:0; padding-top:0; padding-bottom:0; opacity:0;
-    overflow:hidden; pointer-events:none;
-  }
+  /* while the keyboard is open, nothing in the main header needs to move
+     anymore — settings live in their own Options screen now */
   body.keyboard-open header{ padding-bottom:4px; }
-  .fontbar{ transition: max-height .18s ease, opacity .18s ease, padding .18s ease; max-height:60px; }
 
-  /* while actively testing with the keyboard up, clear away everything
-     except the test chips and hint — that's the only thing worth the
-     limited space left above the keyboard on a phone */
-  body.testing.keyboard-open .overlay > h1,
-  body.testing.keyboard-open .overlay > .seal-mark,
-  body.testing.keyboard-open .overlay > p,
-  body.testing.keyboard-open .overlay > .modebar,
-  body.testing.keyboard-open .overlay > .slider-block,
-  body.testing.keyboard-open .overlay > .btn-outline,
-  body.testing.keyboard-open .overlay > #startBtn,
-  body.testing.keyboard-open .overlay > #startBtn2{
+  .icon-btn{
+    background:none; border:1px solid var(--line); border-radius:50%;
+    width:26px; height:26px; padding:0; margin-left:2px;
+    font-size:14px; line-height:1; color:var(--ink-soft);
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ border-color:var(--ink); color:var(--ink); }
+
+  .options-modal{
     display:none;
+    position:fixed; inset:0; z-index:100;
+    height:100vh; height:100dvh; height:calc(var(--vh, 1vh) * 100);
+    background:var(--paper);
+    flex-direction:column;
   }
-  body.testing.keyboard-open .overlay{
-    justify-content:center; gap:10px; padding:14px;
+  .options-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px; border-bottom:1px solid var(--line);
+    flex-shrink:0;
   }
-  body.testing.keyboard-open header{
-    padding:6px 14px 2px;
+  .options-title{
+    font-family:'Noto Serif JP', serif; font-weight:900; font-size:19px; color:var(--ink);
   }
-  body.testing.keyboard-open .title small{
-    display:none;
+  .options-close{
+    background:none; border:none; font-size:28px; line-height:1;
+    color:var(--ink-soft); cursor:pointer; padding:0 4px;
+  }
+  .options-close:hover{ color:var(--seal); }
+  .options-body{
+    flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:20px; display:flex; flex-direction:column; gap:26px;
+  }
+  .opt-section{ display:flex; flex-direction:column; gap:9px; }
+  .opt-label{
+    font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#9C9584;
+  }
+  .options-footer{
+    flex-shrink:0; padding:12px 20px 18px; border-top:1px solid var(--line);
+  }
+  @media (max-width: 480px){
+    .options-header{ padding:14px 16px; }
+    .options-title{ font-size:17px; }
+    .options-body{ padding:16px; gap:20px; }
+    .options-footer{ padding:10px 16px 14px; }
   }
 </style>
 </head>
@@ -412,14 +400,9 @@
       <div>score <b id="score">0</b></div>
       <div>combo <b id="combo">0</b></div>
       <div class="lives" id="lives">●●●</div>
+      <button type="button" class="icon-btn" id="optionsBtn" aria-label="Options">⚙</button>
     </div>
   </header>
-  <div class="fontbar" id="fontbar">
-    <span class="fontbar-label">font</span>
-    <div class="chip small active" data-font="serif">script — 明朝</div>
-    <div class="chip small" data-font="gothic">clean — ゴシック</div>
-    <div class="chip small" data-font="mixed">mixed</div>
-  </div>
 
   <div class="field" id="field">
     <div class="deadline"></div>
@@ -433,27 +416,8 @@
         <div class="chip" data-mode="kata">Katakana</div>
         <div class="chip" data-mode="both">Both</div>
       </div>
-      <div class="modebar">
-        <div class="chip small active" data-font="serif">script — 明朝</div>
-        <div class="chip small" data-font="gothic">clean — ゴシック</div>
-        <div class="chip small" data-font="mixed">mixed</div>
-      </div>
-      <div class="slider-block">
-        <div class="slider-head">
-          <span class="sl-title">Similar-character grace</span>
-          <span class="sl-val" id="ambiguityVal">260ms</span>
-        </div>
-        <input type="range" id="ambiguitySlider" min="0" max="600" step="20" value="260">
-        <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
-      </div>
-      <button type="button" class="btn-outline" data-role="test-btn">TEST</button>
-      <div class="test-panel">
-        <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in with your current grace setting.</div>
-        <div class="test-chips"></div>
-        <button type="button" class="link-btn" data-role="test-exit">exit test</button>
-      </div>
       <button class="btn" id="startBtn">Start</button>
-      <div class="hint">Type to clear · Esc to reset your input</div>
+      <div class="hint">Type to clear · Esc to reset your input · ⚙ for options</div>
     </div>
   </div>
 
@@ -462,6 +426,39 @@
       <input type="text" id="typeInput" placeholder="type romaji…" disabled>
     </form>
   </footer>
+</div>
+
+<div class="options-modal" id="optionsModal">
+  <div class="options-header">
+    <span class="options-title">Options</span>
+    <button type="button" class="options-close" id="optionsClose" aria-label="Close">×</button>
+  </div>
+  <div class="options-body">
+    <div class="opt-section">
+      <div class="opt-label">Kana font</div>
+      <div class="modebar">
+        <div class="chip small active" data-font="serif">script — 明朝</div>
+        <div class="chip small" data-font="gothic">clean — ゴシック</div>
+        <div class="chip small" data-font="mixed">mixed</div>
+      </div>
+    </div>
+    <div class="opt-section slider-block">
+      <div class="slider-head">
+        <span class="sl-title">Similar-character grace</span>
+        <span class="sl-val" id="ambiguityVal">260ms</span>
+      </div>
+      <input type="range" id="ambiguitySlider" min="0" max="600" step="20" value="260">
+      <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-label">Try it</div>
+      <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> below — see which one locks in with your current grace setting.</div>
+      <div class="test-chips" id="optTestChips"></div>
+    </div>
+  </div>
+  <div class="options-footer">
+    <input type="text" id="optionsTestInput" placeholder="type romaji to test…" autocomplete="off">
+  </div>
 </div>
 
 <script>
@@ -530,7 +527,6 @@ const livesEl = document.getElementById('lives');
 const flashEl = document.getElementById('flash');
 const modebar = document.getElementById('modebar');
 const startBtn= document.getElementById('startBtn');
-const fontbar = document.getElementById('fontbar');
 
 const FONTS = {
   serif:  "'Noto Serif JP', serif",
@@ -615,9 +611,6 @@ function currentFallDuration(){
 }
 
 function startGame(){
-  testMode = false;
-  document.body.classList.remove('testing');
-  clearTimeout(testPendingResolve);
   clearTimeout(pendingResolve);
   score = 0; combo = 0; bestCombo = 0; lives = TUNE.lives;
   missHistory = [];
@@ -770,41 +763,10 @@ function endGame(){
       <div class="chip" data-mode="kata">Katakana</div>
       <div class="chip" data-mode="both">Both</div>
     </div>
-    <div class="modebar">
-      <div class="chip small" data-font="serif">script — 明朝</div>
-      <div class="chip small" data-font="gothic">clean — ゴシック</div>
-      <div class="chip small" data-font="mixed">mixed</div>
-    </div>
-    <div class="slider-block">
-      <div class="slider-head">
-        <span class="sl-title">Similar-character grace</span>
-        <span class="sl-val" id="ambiguityVal2">${TUNE.ambiguityWindowMs}ms</span>
-      </div>
-      <input type="range" id="ambiguitySlider2" min="0" max="600" step="20" value="${TUNE.ambiguityWindowMs}">
-      <div class="sl-help">Input grace before registering similar characters, such as n vs na · ni · nu · ne · no.</div>
-    </div>
-    <button type="button" class="btn-outline" data-role="test-btn">TEST</button>
-    <div class="test-panel">
-      <div class="test-hint">Type <b>n</b>, then try <b>na · ni · nu · ne · no</b> — see which one locks in with your current grace setting.</div>
-      <div class="test-chips"></div>
-      <button type="button" class="link-btn" data-role="test-exit">exit test</button>
-    </div>
     <button class="btn" id="startBtn2">Play again</button>
   `;
-  // reflect current mode + font choice on the fresh chips
-  const currentModeChip = [...document.querySelectorAll('#modebar2 [data-mode]')]
-    .find(c => pool === (c.dataset.mode==='hira'?HIRA:c.dataset.mode==='kata'?KATA:HIRA.concat(KATA)));
-  document.querySelectorAll('#overlay [data-font]').forEach(c=>c.classList.toggle('active', c.dataset.font===fontMode));
-
+  // reflect current mode choice on the fresh chips
   document.getElementById('startBtn2').addEventListener('click', startGame);
-  const ambiguitySlider2 = document.getElementById('ambiguitySlider2');
-  const ambiguityVal2 = document.getElementById('ambiguityVal2');
-  ambiguitySlider2.addEventListener('input', ()=>{
-    TUNE.ambiguityWindowMs = parseInt(ambiguitySlider2.value, 10);
-    ambiguityVal2.textContent = TUNE.ambiguityWindowMs + 'ms';
-    ambiguitySlider.value = TUNE.ambiguityWindowMs;
-    ambiguityVal.textContent = TUNE.ambiguityWindowMs + 'ms';
-  });
   document.getElementById('modebar2').addEventListener('click', (e)=>{
     const chip = e.target.closest('.chip');
     if(!chip) return;
@@ -818,33 +780,29 @@ function endGame(){
 let pendingResolve = null;
 
 // ---------------------------------------------------------------
-// TEST MODE — lets the player feel the "similar-character grace"
-// setting on the home/end screens using the same input box and the
-// same matching rules as the real game, without starting a round.
+// OPTIONS MODAL — font, similar-character grace, and a live test
+// area, all in one dedicated screen reachable via the ⚙ button.
+// Fully independent from the game's own input/state.
 // ---------------------------------------------------------------
-let testMode = false;
+const optionsModal = document.getElementById('optionsModal');
+const optionsClose = document.getElementById('optionsClose');
+const optionsBtn = document.getElementById('optionsBtn');
+const optionsTestInput = document.getElementById('optionsTestInput');
+const optTestChips = document.getElementById('optTestChips');
+
 let testKana = [];
 let testPendingResolve = null;
 const TEST_LONG = [['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no']];
 
-function testPanelEls(){
-  return {
-    panel: overlay.querySelector('.test-panel'),
-    chipsArea: overlay.querySelector('.test-chips'),
-  };
-}
-
 function spawnTestPair(){
-  const { chipsArea } = testPanelEls();
-  if(!chipsArea) return;
-  chipsArea.innerHTML = '';
+  optTestChips.innerHTML = '';
   testKana = [];
   const [lchar, lromaji] = TEST_LONG[Math.floor(Math.random()*TEST_LONG.length)];
   [{char:'ん', romaji:'n'}, {char:lchar, romaji:lromaji}].forEach(({char, romaji})=>{
     const el = document.createElement('div');
     el.className = 'test-chip';
     el.innerHTML = `<span class="tc-char">${char}</span><span class="tc-romaji">${romaji}</span>`;
-    chipsArea.appendChild(el);
+    optTestChips.appendChild(el);
     testKana.push({ char, romaji, el });
   });
 }
@@ -854,7 +812,7 @@ function testCommitHit(guess){
   if(idx === -1) return;
   testKana[idx].el.classList.add('hit');
   testKana.splice(idx, 1);
-  input.value = '';
+  optionsTestInput.value = '';
   if(testKana.length === 0) setTimeout(spawnTestPair, 450);
 }
 
@@ -866,38 +824,39 @@ function testAttemptMatch(guess){
   const isPrefixOfSomethingOnscreen = testKana.some(k => k.romaji.length > guess.length && k.romaji.startsWith(guess));
   if(exact && isPrefixOfSomethingOnscreen){
     testPendingResolve = setTimeout(()=>{
-      if(input.value.trim().toLowerCase() === guess) testCommitHit(guess);
+      if(optionsTestInput.value.trim().toLowerCase() === guess) testCommitHit(guess);
     }, TUNE.ambiguityWindowMs);
   } else if(exact){
     testCommitHit(guess);
   }
 }
 
-function startTestMode(){
-  testMode = true;
-  document.body.classList.add('testing');
-  const { panel } = testPanelEls();
-  if(panel) panel.style.display = 'flex';
-  input.disabled = false;
-  input.value = '';
-  input.focus();
-  spawnTestPair();
-}
-
-function exitTestMode(){
-  testMode = false;
-  document.body.classList.remove('testing');
-  clearTimeout(testPendingResolve);
-  const { panel } = testPanelEls();
-  if(panel) panel.style.display = 'none';
-  input.disabled = true;
-  input.value = '';
-}
-
-document.addEventListener('click', (e)=>{
-  if(e.target.closest('[data-role="test-btn"]')){ startTestMode(); return; }
-  if(e.target.closest('[data-role="test-exit"]')){ exitTestMode(); return; }
+optionsTestInput.addEventListener('input', ()=>{
+  testAttemptMatch(optionsTestInput.value.trim().toLowerCase());
 });
+optionsTestInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ optionsTestInput.value = ''; return; }
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  clearTimeout(testPendingResolve);
+  const guess = optionsTestInput.value.trim().toLowerCase();
+  if(guess && testKana.some(k => k.romaji === guess)) testCommitHit(guess);
+});
+
+function openOptions(){
+  optionsModal.style.display = 'flex';
+  optionsTestInput.value = '';
+  spawnTestPair();
+  setTimeout(()=> optionsTestInput.focus(), 60);
+}
+function closeOptions(){
+  clearTimeout(testPendingResolve);
+  optionsModal.style.display = 'none';
+  optionsTestInput.blur();
+  optionsTestInput.value = '';
+}
+optionsBtn.addEventListener('click', openOptions);
+optionsClose.addEventListener('click', closeOptions);
 
 function commitHit(guess){
   const candidates = active.filter(k=>k.romaji === guess);
@@ -930,30 +889,21 @@ function attemptMatch(guess){
 
 form.addEventListener('submit', (e)=>{
   e.preventDefault();
+  if(!running) return;
+  clearTimeout(pendingResolve);
   const guess = input.value.trim().toLowerCase();
   if(!guess) return;
 
-  if(running){
-    clearTimeout(pendingResolve);
-    // match against the kana that's fallen furthest (most urgent) first
-    const candidates = active.filter(k=>k.romaji === guess);
-    if(candidates.length){
-      candidates.sort((a,b)=> parseFloat(b.el.style.top) - parseFloat(a.el.style.top));
-      hitKana(candidates[0]);
-      input.value = '';
-    } else {
-      // wrong guess: small shake, no life loss (typos shouldn't be punished as hard as misses)
-      input.style.borderBottomColor = 'var(--seal)';
-      setTimeout(()=>{ input.style.borderBottomColor = ''; }, 180);
-    }
-  } else if(testMode){
-    clearTimeout(testPendingResolve);
-    if(testKana.some(k => k.romaji === guess)){
-      testCommitHit(guess);
-    } else {
-      input.style.borderBottomColor = 'var(--seal)';
-      setTimeout(()=>{ input.style.borderBottomColor = ''; }, 180);
-    }
+  // match against the kana that's fallen furthest (most urgent) first
+  const candidates = active.filter(k=>k.romaji === guess);
+  if(candidates.length){
+    candidates.sort((a,b)=> parseFloat(b.el.style.top) - parseFloat(a.el.style.top));
+    hitKana(candidates[0]);
+    input.value = '';
+  } else {
+    // wrong guess: small shake, no life loss (typos shouldn't be punished as hard as misses)
+    input.style.borderBottomColor = 'var(--seal)';
+    setTimeout(()=>{ input.style.borderBottomColor = ''; }, 180);
   }
 });
 
@@ -963,14 +913,14 @@ input.addEventListener('keydown', (e)=>{
 
 // match live as you type, instead of waiting for Enter
 input.addEventListener('input', ()=>{
+  if(!running) return;
   const guess = input.value.trim().toLowerCase();
-  if(running){ attemptMatch(guess); }
-  else if(testMode){ testAttemptMatch(guess); }
+  attemptMatch(guess);
 });
 
 // clicking chips/buttons steals focus from the input — pull it back whenever the round is live
 document.addEventListener('click', (e)=>{
-  if(!running && !testMode) return;
+  if(!running) return;
   if(e.target.closest('input')) return;
   setTimeout(()=> input.focus(), 0);
 });
